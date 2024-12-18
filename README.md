@@ -34,7 +34,70 @@
     sudo usermod -aG docker ubuntu
     newgrp docker
     sudo chmod 777 /var/run/docker.sock
-    ``` 
+    ```
+      **Step 4: Install Terraform:**
+
+- Set up Terraform on the EC2 instance:
+  
+ ````
+sudo apt-get update && sudo apt-get install -y gnupg software-properties-common
+
+wget -O- https://apt.releases.hashicorp.com/gpg | \
+gpg --dearmor | \
+sudo tee /usr/share/keyrings/hashicorp-archive-keyring.gpg > /dev/null
+
+gpg --no-default-keyring \
+--keyring /usr/share/keyrings/hashicorp-archive-keyring.gpg \
+--fingerprint
+
+echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] \
+https://apt.releases.hashicorp.com $(lsb_release -cs) main" | \
+sudo tee /etc/apt/sources.list.d/hashicorp.list
+
+sudo apt update
+sudo apt-get install terraform
+terraform --version
+
+````
+
+${\color{blue} \textbf {Setup  AWS CLI:}}$
+````
+curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+sudo apt install unzip 
+unzip awscliv2.zip
+sudo ./aws/install
+aws --version
+
+````
+
+ **Step 5: Install Kubernetes:**
+ ## ${\color{blue} \textbf {Install kubectl}}$
+Download the latest release with the command:
+````
+curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+````
+Validate the binary 
+````
+ curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl.sha256"
+````
+Validate the kubectl binary against the checksum file:
+````
+echo "$(cat kubectl.sha256)  kubectl" | sha256sum --check
+````
+Install kubectl:
+````
+sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+````
+Note:
+If you do not have root access on the target system, you can still install kubectl to the ~/.local/bin directory:
+````
+chmod +x kubectl
+mkdir -p ~/.local/bin
+mv ./kubectl ~/.local/bin/kubectl
+````
+````
+kubectl version --client
+````
 
 ## $${\color {red} \textbf {Phase 2: Security}}$$
 
@@ -107,6 +170,8 @@ Install below plugins
 
 3 NodeJs Plugin (Install Without restart)
 
+4 Aws Credentials Plugin
+
 
 ### **Configure Java and Nodejs in Global Tool Configuration**
 
@@ -152,7 +217,108 @@ We will install a sonar scanner in the tools.
   - Enter your DockerHub credentials (Username and Password) and give the credentials an ID (e.g., "docker").
   - Click "OK" to save your DockerHub credentials.
 
-                 
+
+  **Add AWS Credentials:**
+
+- To securely handle Aws credentials in your Jenkins pipeline, follow these steps:
+  - Go to "Dashboard" → "Manage Jenkins" → "Manage Credentials."
+  - Click on "System" and then "Global credentials (unrestricted)."
+  - Click on "Add Credentials" on the left side.
+  - Choose "Secret text" as the kind of credentials.
+  - Enter your Aws credentials (Access key and Secret Access Key) and give the credentials an ID (e.g., "aws").
+  - Click "OK" to save your Aws credentials.
+
+
+    Now, here you have to build the EKS pipeline code.
+
+
+    
+ pipeline {
+          agent any
+          environment {
+              // Set AWS credentials if using Jenkins credentials plugin
+              AWS_ACCESS_KEY_ID = credentials('aws')
+              AWS_SECRET_ACCESS_KEY = credentials('aws')
+              AWS_DEFAULT_REGION = 'ap-south-1'  // Set your desired AWS region
+          }
+          parameters {
+              choice(
+                  name: 'action',
+                  choices: ['apply', 'destroy'],
+                  description: 'Choose the Terraform action to perform'
+              )
+          }
+          stages {
+              stage('Checkout from Git') {
+                  steps {
+                      echo "Checking out the code from Git..."
+                      git branch: 'main', url: 'https://github.com/prathamnandgirwar/Youtube-clone.git'
+                  }
+              }
+              
+              stage('Check AWS Credentials') {
+                  steps {
+                      script {
+                          echo "Checking AWS credentials..."
+                          // Check AWS identity to verify credentials
+                          sh 'aws sts get-caller-identity'
+                      }
+                  }
+              }
+      
+              stage('Terraform version') {
+                  steps {
+                      echo "Checking Terraform version..."
+                      sh 'terraform --version'
+                  }
+              }
+      
+              stage('Terraform init') {
+                  steps {
+                      echo "Initializing Terraform..."
+                      dir('Terraform') {
+                          sh 'terraform init'
+                      }
+                  }
+              }
+      
+              stage('Terraform validate') {
+                  steps {
+                      echo "Validating Terraform configuration..."
+                      dir('Terraform') {
+                          sh 'terraform validate'
+                      }
+                  }
+              }
+      
+              stage('Terraform plan') {
+                  steps {
+                      echo "Running Terraform plan..."
+                      dir('Terraform') {
+                          sh 'terraform plan'
+                      }
+                  }
+              }
+      
+              stage('Terraform apply/destroy') {
+                  steps {
+                      echo "Applying or Destroying Terraform configuration..."
+                      dir('Terraform') {
+                          // Use the parameter to determine the action
+                          sh "terraform ${params.action} --auto-approve"
+                      }
+                  }
+              }
+          }
+          post {
+              failure {
+                  echo "Pipeline failed. Check the logs for errors."
+              }
+              success {
+                  echo "Pipeline executed successfully!"
+              }
+          }
+      }
              
 
 Now, you have installed the Dependency-Check plugin, configured the tool, and added Docker-related plugins along with your DockerHub and AWS credentials in Jenkins. You can now proceed with configuring your Jenkins pipeline to include these tools and credentials in your CI/CD process.
