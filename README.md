@@ -35,7 +35,8 @@
     newgrp docker
     sudo chmod 777 /var/run/docker.sock
     ```
-      **Step 4: Install Terraform:**
+
+ **Step 3: Install Terraform :**
 
 - Set up Terraform on the EC2 instance:
   
