@@ -231,11 +231,9 @@ We will install a sonar scanner in the tools.
 
 
 
-
-
-    Now, here you have to build the EKS pipeline code.
+  Now, here you have to build the EKS pipeline code.
     
-  ```groovy
+ ```groovy
  pipeline {
           agent any
           environment {
@@ -319,7 +317,6 @@ We will install a sonar scanner in the tools.
               }
           }
       }
-     ```
              
 
 
