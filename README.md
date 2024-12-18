@@ -253,7 +253,7 @@ We will install a sonar scanner in the tools.
               stage('Checkout from Git') {
                   steps {
                       echo "Checking out the code from Git..."
-                      git branch: 'main', url: 'https://github.com/prathamnandgirwar/Hostar-clown.git'
+                      git branch: 'main', url: 'https://github.com/prathamnandgirwar/Youtube-clone.git'
                   }
               }
               
@@ -317,6 +317,8 @@ We will install a sonar scanner in the tools.
               }
           }
       }
+```
+
              
 
 
