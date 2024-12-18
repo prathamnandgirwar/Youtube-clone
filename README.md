@@ -230,9 +230,11 @@ We will install a sonar scanner in the tools.
   - Click "OK" to save your Aws credentials.
 
 
+
+
+
     Now, here you have to build the EKS pipeline code.
-
-
+    
   ```groovy
 
  pipeline {
@@ -318,10 +320,12 @@ We will install a sonar scanner in the tools.
               }
           }
       }
-```
+     ```
              
 
+
 Now, you have installed the Dependency-Check plugin, configured the tool, and added Docker-related plugins along with your DockerHub and AWS credentials in Jenkins. You can now proceed with configuring your Jenkins pipeline to include these tools and credentials in your CI/CD process.
+
 
 
 ```groovy
